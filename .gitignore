@@ -131,3 +131,5 @@ docker-compose.*.local.yml
 
 # Prisma generated client
 /src/generated/
+
+./kilo

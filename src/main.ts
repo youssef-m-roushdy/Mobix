@@ -3,6 +3,11 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+import { DomainExceptionFilter } from './common/filters/domain-exception.filter';
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { ResponseEnvelopeInterceptor } from './common/interceptors/response-envelope.interceptor';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -14,6 +19,24 @@ async function bootstrap() {
       transform: true,             // auto-transform payloads to DTO instances
       transformOptions: { enableImplicitConversion: true },
     }),
+  );
+
+  // Global exception filters.
+  // DomainExceptionFilter handles ValidationException / ConflictException / NotFoundException.
+  // PrismaExceptionFilter handles PrismaClientKnownRequestError (P2002, P2003, P2025).
+  // The two sets are disjoint, so registration order does not matter.
+  app.useGlobalFilters(
+    new DomainExceptionFilter(),
+    new PrismaExceptionFilter(),
+  );
+
+  // Global interceptors.
+  // Order matters here: they wrap in registration order, then unwrap in reverse.
+  // LoggingInterceptor logs the final status/duration.
+  // ResponseEnvelopeInterceptor wraps successful responses as { success, data }.
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new ResponseEnvelopeInterceptor(),
   );
 
   // CORS — allow your frontend origins. Read from env, fallback to localhost.
@@ -32,7 +55,7 @@ async function bootstrap() {
 
   // Swagger
   const config = new DocumentBuilder()
-    .setTitle('Phonestack API')
+    .setTitle('Mobix API')
     .setDescription('Multi-tenant phone store API')
     .setVersion('1.0')
     .addBearerAuth(
