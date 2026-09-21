@@ -1,0 +1,80 @@
+model Customer {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name  String
+  phone String?
+  email String?
+  notes String?
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, phone])
+  @@map("customers")
+}
+
+model Order {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  orderNumber String
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  status      OrderStatus @default(DRAFT)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  currency    String      @default("USD")
+
+  items OrderItem[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  paidAt      DateTime?
+  cancelledAt DateTime?
+
+  @@unique([organizationId, orderNumber])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([customerId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  phoneUnitId String
+  phoneUnit   PhoneUnit @relation(fields: [phoneUnitId], references: [id], onDelete: Restrict)
+
+  unitPrice    Decimal @db.Decimal(10, 2)
+  productName  String
+  imeiSnapshot String
+
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, phoneUnitId])
+  @@index([organizationId])
+  @@index([orderId])
+  @@index([phoneUnitId])
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  SHIPPED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}

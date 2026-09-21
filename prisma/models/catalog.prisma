@@ -1,0 +1,58 @@
+model PhoneModel {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  brand     String
+  modelName String
+  storage   String?
+  color     String?
+  sku       String
+  basePrice Decimal @db.Decimal(10, 2)
+
+  units     PhoneUnit[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([organizationId, sku])
+  @@index([organizationId])
+  @@map("phone_models")
+}
+
+model PhoneUnit {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  phoneModelId String
+  phoneModel   PhoneModel @relation(fields: [phoneModelId], references: [id], onDelete: Restrict)
+
+  imei          String
+  condition     PhoneCondition @default(NEW)
+  status        PhoneStatus    @default(IN_STOCK)
+  purchasePrice Decimal?       @db.Decimal(10, 2)
+
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, imei])
+  @@index([organizationId])
+  @@index([phoneModelId])
+  @@index([organizationId, status])
+  @@map("phone_units")
+}
+
+enum PhoneCondition {
+  NEW
+  USED
+  REFURBISHED
+}
+
+enum PhoneStatus {
+  IN_STOCK
+  SOLD
+  RESERVED
+  DEFECTIVE
+}

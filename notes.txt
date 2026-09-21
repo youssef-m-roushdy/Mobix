@@ -1,0 +1,9 @@
+Prisma
+Create Migration:
+npx prisma migrate dev --name <migration_name>
+Apply Migration:
+npx prisma migrate dev
+Rollback Migration:
+npx prisma migrate resolve --rolled-back <migration_name>
+View tables in DB:
+docker exec -it phone-store-postgres psql -U postgres -d phone_store_db -c "\dt"
